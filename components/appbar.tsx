@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession } from "@/hooks/use-session";
 import { Button } from "@/components/ui/button";
 import { FC, ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Search } from "@/components/search";
 import { useLibraries } from "@/components/auth-provider";
@@ -29,6 +29,7 @@ export const Appbar = () => {
   const path = usePathname();
   const { user } = useSession();
   const { libraries } = useLibraries();
+  const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -58,6 +59,16 @@ export const Appbar = () => {
       <div className="flex-1" />
       <div className="flex flex-row gap-4 items-center">
         <Search />
+        <Button
+            className="justify-start px-2 font-bold"
+            size="sm"
+            type="button"
+            onClick={() =>
+              router.replace('/settings')
+            }
+          >
+            <span>Settings</span>
+        </Button>
         {user && (
           <Button
             className="justify-start px-2 font-bold"
