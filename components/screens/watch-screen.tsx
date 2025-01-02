@@ -484,6 +484,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                     })}`,
                     { scroll: false },
                   );
+                  return;
                 }
 
                 router.replace(`${pathname}?watch=${next.ratingKey}`, {
