@@ -470,7 +470,7 @@ declare namespace Plex {
     size: number;
     more: boolean;
     style: string;
-    Metadata: {
+    Metadata?: {
       ratingKey: string;
       key: string;
       guid: string;

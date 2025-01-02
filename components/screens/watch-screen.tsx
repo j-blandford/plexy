@@ -316,7 +316,6 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
       });
   }, [router, watch]);
 
-  // Currently it seems there is a bug trying to change the video option
   const videoOptions = useMemo(
     () =>
       metadata?.Media && metadata.Media.length > 0
@@ -458,7 +457,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                     controlsList: "nodownload",
                     disablePictureInPicture: true,
                     disableRemotePlayback: true,
-                    autoplay: true,
+                    autoPlay: true,
                   },
                 },
               }}

@@ -17,7 +17,6 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import { durationToText } from "@/lib/utils";
 import { create } from "zustand";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -279,7 +278,7 @@ export const MetaScreen: FC = () => {
                       controls={false}
                       width="100%"
                       height="100%"
-                      autoplay={true}
+                      autoPlay
                       playing={playing}
                       volume={MetaScreenPlayerMuted ? 0 : 0.5}
                       muted={MetaScreenPlayerMuted}
@@ -646,7 +645,7 @@ export const MetaScreen: FC = () => {
                           </div>
                         </button>
                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                          {hub.Metadata.slice(0, 15).map((item, i) => (
+                          {hub.Metadata?.slice(0, 15).map((item, i) => (
                             <VideoView
                               key={i}
                               item={{
