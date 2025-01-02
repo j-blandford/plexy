@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
 export default function Page() {
   // const router = useRouter();
@@ -24,7 +25,7 @@ export default function Page() {
   ];
 
   let dirtySettings: { location: string; value: string; }[] = [];
-  let dirty = false;
+  const [isDirty, setIsDirty] = useState(false);
 
   const setDirtySetting = async (settingName: string, value: any) => {
     //localStorage.setItem(name, value);
@@ -61,12 +62,12 @@ export default function Page() {
       localStorage.setItem(setting.location, setting.value);
     }
 
-    dirty = false;
+    setIsDirty(false);
   }
 
   const setDirty = () => {
     console.log("dirty");
-    dirty = true;
+    setIsDirty(true);
   }
 
   const settingsElem: JSX.Element[] = [];
@@ -74,7 +75,7 @@ export default function Page() {
   for (const category of settingsList) {
 
     settingsElem.push(
-      <p className="font-bold text-2xl" key={category.name}>{category.name}</p>
+      <p className="font-bold text-2xl pt-5" key={category.name}>{category.name}</p>
     )
 
     for (const setting of category.options) {
@@ -85,32 +86,36 @@ export default function Page() {
       });
 
       settingsElem.push(
-        <p key={setting.location}>{setting.name}
-          <input 
-            type="checkbox"
-            checked={getDirtySetting(setting.location) === "true"}
-            onClick={setDirty}
-            onChange={(value) => { setDirtySetting(setting.location, value.target.checked)}}
-            key={"value-" + setting.location}
-          ></input>
-        </p>
+        <div className="pt-1" key={setting.location}>
+          <p>{setting.name}
+            <input 
+              type="checkbox"
+              checked={getDirtySetting(setting.location) === "true"}
+              onClick={setDirty}
+              onChange={(value) => { setDirtySetting(setting.location, value.target.checked)}}
+              key={"value-" + setting.location}
+            ></input>
+          </p>
+        </div>
       );
     }
   }
 
   return <>
     <div className="w-full absolute top-16 ml-20 flex flex-col mr-20 pt-10">
-      <div className="gap-2">
+      <div className="gap-2 pt-5">
         <p className="font-bold text-5xl">Settings</p>
       </div>
 
       {settingsElem}
 
-      <Button 
-        disabled={dirty}
-        onClick={saveSettings}>
-          Save Options
-      </Button>
+      <div className="gap-2 pt-5">
+        <Button 
+          disabled={!isDirty}
+          onClick={saveSettings}>
+            Save Options
+        </Button>
+      </div>
     </div>
   </>;
 }
