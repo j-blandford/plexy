@@ -117,6 +117,13 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
       },
     )}`;
 
+  const getSubtitleStream = (metadata: Plex.Metadata) => {
+    return metadata.Media ?
+      metadata?.Media[0].Part[0].Stream
+        .filter((value) => value.streamType == 3)
+      : undefined;
+  }
+
   const loadMetadata = async (id: string) => {
     setIsLoadingMetadata(true);
     await ServerApi.decision({
@@ -140,19 +147,20 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
           });
         }
 
-        if(forceSubtitles) {
-          let subtitleId: string | undefined = metadata?.Media 
-          ? metadata?.Media[0].Part[0].Stream.find((value) => value.displayTitle == "English")?.id.toString()
-          : "";
-  
+        if (forceSubtitles) {
+          const subtitleStream: Plex.Stream | undefined = getSubtitleStream(metadata)
+            ?.find((value) => value.displayTitle.indexOf("English") != -1);
+
+          let subtitleId: string = subtitleStream?.id.toString() ?? "";
+
           // Could not find subs in "English", default to first element.
-          if(!subtitleId) {
-            subtitleId = metadata?.Media 
-              ? metadata?.Media[0].Part[0].Stream[0].id.toString()
-              : "";
+          if (!subtitleId) {
+            subtitleId = subtitleStream?.id.toString() ?? "";
           }
 
-          if(subtitleId != "") {
+          if (subtitleId != "") {
+            console.log("Setting subtitles to ID " + subtitleId);
+
             ServerApi.subtitle({
               part: metadata?.Media
                 ? metadata?.Media[0].Part[0].id.toString()
@@ -160,10 +168,18 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
               stream: subtitleId
             });
 
-            console.debug("Setting subtitles to ID " + subtitleId);
+            let watch: string = "";
+            loadMetadata(watch);
+            ServerApi.decision({
+              id: watch,
+              limitation: {
+                maxVideoBitrate: quality.bitrate,
+                autoAdjustQuality: quality.auto,
+              },
+            });
 
             const progress =
-            player.current?.getCurrentTime() ?? 0;
+              player.current?.getCurrentTime() ?? 0;
 
             if (!seekToAfterLoad.current) {
               seekToAfterLoad.current = progress;
@@ -183,11 +199,9 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
 
     if (serverPreferences) {
       ServerApi.queue({
-        uri: `server://${
-          serverPreferences.machineIdentifier
-        }/com.plexapp.plugins.library/library/metadata/${
-          (Metadata as Plex.Metadata).ratingKey
-        }`,
+        uri: `server://${serverPreferences.machineIdentifier
+          }/com.plexapp.plugins.library/library/metadata/${(Metadata as Plex.Metadata).ratingKey
+          }`,
       }).then((queue) => {
         setPlayQueue(queue);
       });
@@ -378,8 +392,8 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
     () =>
       metadata?.Media && metadata.Media.length > 0
         ? getCurrentVideoLevels(metadata.Media[0].videoResolution).filter(
-            (opt) => opt.bitrate,
-          )
+          (opt) => opt.bitrate,
+        )
         : [],
     [metadata?.Media],
   );
@@ -387,8 +401,8 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
     () =>
       metadata?.Media && metadata.Media.length > 0
         ? metadata?.Media[0].Part[0].Stream.filter(
-            (stream) => stream.streamType === 2,
-          )
+          (stream) => stream.streamType === 2,
+        )
         : [],
     [metadata?.Media],
   );
@@ -396,8 +410,8 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
     () =>
       metadata?.Media && metadata.Media.length > 0
         ? metadata?.Media[0].Part[0].Stream.filter(
-            (stream) => stream.streamType === 3,
-          )
+          (stream) => stream.streamType === 3,
+        )
         : [],
     [metadata?.Media],
   );
@@ -725,6 +739,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                 </DialogTrigger>
                 <DialogContent className="m-4 flex flex-col gap-2">
                   <VisuallyHidden>
+                    <DialogDescription>Player options for quality and accessibility</DialogDescription>
                     <DialogTitle>Playback Settings</DialogTitle>
                   </VisuallyHidden>
                   {videoOptions.length > 0 && (
@@ -887,6 +902,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
 
                           setUrl("");
                           setNextUrl(loaded());
+                          setForceSubtitles(false); // override localStorage if changed
                         }}
                       >
                         <SelectTrigger className="w-full">
