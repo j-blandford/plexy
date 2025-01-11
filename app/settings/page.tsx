@@ -11,6 +11,16 @@ export default function Page() {
       "name": "General",
       "options": [
         {
+          "name": "Scan library automatically",
+          "type": "checkbox",
+          "location": "autoScanLibrary"
+        }
+      ]
+    },
+    {
+      "name": "Player Behaviour",
+      "options": [
+        {
           "name": "Auto-skip Intro",
           "type": "checkbox",
           "location": "autoSkipIntro"
@@ -19,55 +29,64 @@ export default function Page() {
           "name": "Auto-skip Credits",
           "type": "checkbox",
           "location": "autoSkipCredits"
+        },
+        {
+          "name": "Force Subtitles",
+          "type": "checkbox",
+          "location": "forceSubtitles"
         }
       ]
     }
   ];
 
-  let dirtySettings: { location: string; value: string; }[] = [];
   const [isDirty, setIsDirty] = useState(false);
+  const [dirtySettings, setDirtySettings] = useState<any[]>([]);
 
   const setDirtySetting = async (settingName: string, value: any) => {
-    //localStorage.setItem(name, value);
-
-    console.log("set", settingName, value);
-
+    let found = false;
     for(let i = 0; i < dirtySettings.length; i++) {
-      if(dirtySettings[i].location === settingName) {
+      if(dirtySettings[i].name == settingName) {
         dirtySettings[i].value = value;
+        found = true;
       }
+    }
+
+    if(!found) {
+      setDirtySettings([
+        ...dirtySettings,
+        {
+          name: settingName,
+          value: new String(value)
+        }
+      ])
     }
   }
 
   const getSetting = (name: string) => {
     const settingValue = localStorage.getItem(name);
-    console.log(settingValue);
+    const dirtySettingValue = dirtySettings.find((elem) => elem.name === name);
+    if(dirtySettingValue) {
+      return dirtySettingValue.value;
+    }
     return settingValue;
   }
 
   const getDirtySetting = (name: string) => {
     for (const setting of dirtySettings) {
-      if(setting.location === name) {
-        console.log("lol", setting.value);
+      if(setting.name === name) {
         return setting.value;
       }
     }
 
-    // default to settings
     return getSetting(name);
   }
 
   const saveSettings = () => {
-    for (const setting of dirtySettings) {
-      localStorage.setItem(setting.location, setting.value);
-    }
+    dirtySettings.map((setting) => {
+      localStorage.setItem(setting.name, setting.value);
+    });
 
     setIsDirty(false);
-  }
-
-  const setDirty = () => {
-    console.log("dirty");
-    setIsDirty(true);
   }
 
   const settingsElem: JSX.Element[] = [];
@@ -79,19 +98,13 @@ export default function Page() {
     )
 
     for (const setting of category.options) {
-      const settingValue = getSetting(setting.location);
-      dirtySettings.push({
-        "location": setting.location,
-        "value": settingValue ? settingValue : "false"
-      });
-
       settingsElem.push(
         <div className="pt-1" key={setting.location}>
-          <p>{setting.name}
+          <p>{setting.name} &nbsp;
             <input 
               type="checkbox"
-              checked={getDirtySetting(setting.location) === "true"}
-              onClick={setDirty}
+              checked={getDirtySetting(setting.location) == "true"}
+              onClick={() => setIsDirty(true)}
               onChange={(value) => { setDirtySetting(setting.location, value.target.checked)}}
               key={"value-" + setting.location}
             ></input>

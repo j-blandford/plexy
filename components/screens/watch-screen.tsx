@@ -76,6 +76,9 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
   const [volume, setVolume] = useState<number>(
     parseInt(localStorage.getItem("volume") ?? "100"),
   );
+  const [forceSubtitles, setForceSubtitles] = useState<boolean>(
+    localStorage.getItem("forceSubtitles") == "true",
+  );
   const lastAppliedTime = useRef<number>(0);
   const [playing, setPlaying] = useState(true);
   const [ready, setReady] = useState(false);
@@ -136,6 +139,40 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
             id: metadata.grandparentRatingKey as string,
           });
         }
+
+        if(forceSubtitles) {
+          let subtitleId: string | undefined = metadata?.Media 
+          ? metadata?.Media[0].Part[0].Stream.find((value) => value.displayTitle == "English")?.id.toString()
+          : "";
+  
+          // Could not find subs in "English", default to first element.
+          if(!subtitleId) {
+            subtitleId = metadata?.Media 
+              ? metadata?.Media[0].Part[0].Stream[0].id.toString()
+              : "";
+          }
+
+          if(subtitleId != "") {
+            ServerApi.subtitle({
+              part: metadata?.Media
+                ? metadata?.Media[0].Part[0].id.toString()
+                : "",
+              stream: subtitleId
+            });
+
+            console.debug("Setting subtitles to ID " + subtitleId);
+
+            const progress =
+            player.current?.getCurrentTime() ?? 0;
+
+            if (!seekToAfterLoad.current) {
+              seekToAfterLoad.current = progress;
+            }
+
+            setUrl("");
+            setNextUrl(loaded());
+          }
+        }
       } else {
         console.error("Invalid metadata type");
       }
@@ -158,6 +195,18 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
 
     setIsLoadingMetadata(false);
   };
+
+  // const skipIntro = async (player: MutableRefObject<ReactPlayer | null>, playing: boolean) => {
+  //   if (!player.current || !metadata?.Marker) return;
+  //   const time =
+  //     metadata.Marker?.filter(
+  //       (marker) =>
+  //         marker.startTimeOffset / 1000 <= progress &&
+  //         marker.endTimeOffset / 1000 >= progress &&
+  //         marker.type === "intro",
+  //     )[0].endTimeOffset / 1000;
+  //   player.current.seekTo(time + 1);
+  // }
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -299,6 +348,15 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
       lastAppliedTime.current = 0;
     };
   }, [container, watch]);
+
+  // Auto-skip intro
+  // setInterval(() => {
+  //   const settingSkipIntro = localStorage.getItem("autoSkipIntro");
+  //   if(settingSkipIntro && settingSkipIntro === "true") {
+  //     console.log("Skipping intro");
+  //     skipIntro();
+  //   }
+  // }, 1000);
 
   const back = useCallback(() => {
     if (!player.current || !watch) return;
@@ -455,7 +513,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                   dashVersion: "4.7.0",
                   attributes: {
                     controlsList: "nodownload",
-                    disablePictureInPicture: true,
+                    disablePictureInPicture: false,
                     disableRemotePlayback: true,
                     autoPlay: true,
                   },
@@ -484,7 +542,6 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                     })}`,
                     { scroll: false },
                   );
-                  return;
                 }
 
                 router.replace(`${pathname}?watch=${next.ratingKey}`, {
@@ -833,7 +890,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                         }}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose an subtitle" />
+                          <SelectValue placeholder="Choose a subtitle" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">None</SelectItem>
@@ -842,7 +899,7 @@ export const WatchScreen: FC<{ watch: string | undefined }> = ({ watch }) => {
                               value={option.id.toString()}
                               key={option.id}
                             >
-                              {option.extendedDisplayTitle}
+                              {option.extendedDisplayTitle} - ID={option.id}
                             </SelectItem>
                           ))}
                         </SelectContent>
